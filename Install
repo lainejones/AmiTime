@@ -1,0 +1,73 @@
+.KEY host,tz
+.BRA {
+.KET }
+;
+; AmiTime installer
+;
+;   Execute Install                        ; defaults (pool.ntp.org, Locale TZ)
+;   Execute Install 192.168.1.10           ; choose the time server
+;   Execute Install 192.168.1.10 -6        ; ...and the hours from UTC
+;
+; A plain AmigaDOS script rather than a Commodore Installer script: it works on
+; any system from 2.0 up without Installer being present, takes its answers as
+; arguments (so it never stalls on a prompt), and can be read before running.
+;
+FAILAT 21
+
+ECHO "*NAmiTime installer"
+ECHO "-------------------"
+
+IF NOT EXISTS AmiTime
+  ECHO "*NError: run this from the drawer that contains the AmiTime program."
+  QUIT 10
+ENDIF
+
+; --- the program ----------------------------------------------------------
+ECHO ""
+ECHO "Copying AmiTime to C: ..."
+COPY AmiTime C: CLONE
+IF WARN
+  ECHO "Error: could not copy AmiTime to C:"
+  QUIT 10
+ENDIF
+PROTECT C:AmiTime +e
+ECHO "  done."
+
+; --- configuration (stored in ENVARC: so it survives a reboot) -------------
+IF NOT "{host}" EQ ""
+  SETENV SAVE AMITIME_HOST "{host}"
+  ECHO "  time server set to {host}"
+ELSE
+  ECHO "  no server given - AmiTime will use pool.ntp.org"
+ENDIF
+
+IF NOT "{tz}" EQ ""
+  SETENV SAVE AMITIME_TZ "{tz}"
+  ECHO "  timezone set to {tz} hours from UTC"
+ELSE
+  ECHO "  no timezone given - AmiTime will use your Locale preferences"
+ENDIF
+
+; --- prove it works --------------------------------------------------------
+ECHO ""
+ECHO "Testing (this asks the server for the time, but changes no clock) ..."
+C:AmiTime SHOW
+IF WARN
+  ECHO ""
+  ECHO "No reply.  That is usually one of:"
+  ECHO "  - the TCP/IP stack is not running yet"
+  ECHO "  - the server name cannot be resolved (try a numeric IP address)"
+  ECHO "  - UDP port 123 is blocked"
+  ECHO "AmiTime is still installed - try again with:  AmiTime SHOW"
+ENDIF
+
+; --- how to make it automatic ---------------------------------------------
+ECHO ""
+ECHO "Installed.  To set the clock at every boot, add this to S:User-Startup"
+ECHO "AFTER your TCP/IP stack starts:"
+ECHO ""
+ECHO "    C:AmiTime QUIET"
+ECHO ""
+ECHO "Add SAVE if this machine has a working battery clock, and use"
+ECHO "'Run >NIL: C:AmiTime QUIET TIMEOUT 20' if your stack is slow to come up."
+ECHO ""

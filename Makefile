@@ -9,7 +9,7 @@
 #   make dist     build the release archives (.lha and .zip)
 #   make clean    remove build products
 
-VERSION = 1.0
+VERSION = 1.1
 CC      = m68k-amigaos-gcc
 CFLAGS  = -m68000 -O2 -noixemul -Wall -fomit-frame-pointer
 
@@ -18,8 +18,13 @@ CFLAGS  = -m68000 -O2 -noixemul -Wall -fomit-frame-pointer
 DISTDIR  = dist
 DISTFILE = AmiTime-$(VERSION)
 
-amitime: amitime.c
-	$(CC) $(CFLAGS) -o $@ $< -lamiga
+amitime: amitime.c tz.c tz.h
+	$(CC) $(CFLAGS) -o $@ amitime.c tz.c -lamiga
+
+# The POSIX TZ logic is plain C, so it is tested on the BUILD host - far
+# quicker than pushing a binary to real hardware for every calendar edge case.
+test:
+	gcc -O2 -Wall -o /tmp/amitime_test_tz tz.c test_tz.c && /tmp/amitime_test_tz
 
 # Release archives.  .lha first: that is what Amiga users and Aminet expect
 # (and it is what unpacks natively on the machine itself); the .zip is for
@@ -48,4 +53,4 @@ dist: amitime
 clean:
 	rm -rf amitime $(DISTDIR) $(DISTFILE).lha $(DISTFILE).zip
 
-.PHONY: dist clean
+.PHONY: dist clean test

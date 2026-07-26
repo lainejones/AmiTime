@@ -34,7 +34,7 @@ AmiTime [HOST <server>] [TZ <hours>] [PORT <n>] [TIMEOUT <secs>]
 | Option | Meaning |
 |---|---|
 | `HOST`    | Time server. Default `pool.ntp.org`, or `ENV:AMITIME_HOST`. |
-| `TZ`      | Hours from UTC, may be negative. Default: your Locale setting, or `ENV:AMITIME_TZ`. |
+| `TZ`      | Hours from UTC, may be negative. Overrides everything below. |
 | `PORT`    | Server port (default 123). |
 | `TIMEOUT` | Seconds to wait per attempt (default 5; it tries three times). |
 | `SAVE`    | Also write the battery-backed clock, like `SetClock save`. |
@@ -51,21 +51,49 @@ AmiTime HOST 192.168.1.10 TZ 1 SAVE  ; LAN server, set RTC too
 AmiTime SHOW                         ; just tell me the time
 ```
 
-## Timezones
+## Timezones and daylight saving
 
 AmigaOS keeps the system clock in **local** time, so AmiTime has to know your
 offset from UTC. In order of preference it uses:
 
-1. the `TZ` argument,
-2. `ENV:AMITIME_TZ`,
-3. your Locale preferences (`loc_GMTOffset`).
+1. the `TZ` argument — a fixed offset,
+2. `ENV:AMITIME_TZ` — a fixed offset,
+3. **a POSIX TZ rule** in `ENV:AMITIME_TZRULE` or `ENV:TZ` — handles daylight saving,
+4. your Locale preferences (`loc_GMTOffset`) — a fixed offset,
+5. otherwise UTC.
 
-It prints which one it used. Be aware that a lot of Amigas have never had
-Locale's GMT offset set — if the reported offset looks wrong, either fix it in
-`Prefs/Locale` or pass `TZ` explicitly.
+It always prints which one it used.
 
-There is no automatic daylight-saving handling: if your region changes clocks,
-update `TZ` (or your Locale) when it does.
+### Daylight saving
+
+AmigaOS itself has no concept of daylight saving — `locale.library` gives you a
+GMT offset and nothing more (`loc_Flags` is documented "always 0 for now"). So
+for the clock to stay right across a changeover, the rules have to come from a
+**POSIX TZ string**, the same format Unix uses:
+
+```
+SetEnv SAVE AMITIME_TZRULE "MST7MDT,M3.2.0,M11.1.0"    ; US Mountain
+SetEnv SAVE AMITIME_TZRULE "CET-1CEST,M3.5.0,M10.5.0/3" ; Central Europe
+SetEnv SAVE AMITIME_TZRULE "GMT0BST,M3.5.0/1,M10.5.0/2" ; UK
+SetEnv SAVE AMITIME_TZRULE "AEST-10AEDT,M10.1.0,M4.1.0/3" ; Sydney
+SetEnv SAVE AMITIME_TZRULE "JST-9"                      ; Japan, no DST
+```
+
+AmiTime then works out whether daylight saving is in force **for the date it
+just fetched** and says so:
+
+```
+AmiTime: using TZ rule 'MST7MDT,M3.2.0,M11.1.0' (-360 minutes from UTC, daylight saving)
+AmiTime: 25-Jul-26 19:05:45
+```
+
+Note the POSIX sign convention: the offset is how far you are *behind* UTC, so
+US Mountain is `MST7`, and Central Europe is `CET-1`. Supported rule form is
+`Mmonth.week.day[/time]` (week 5 meaning "last"), which is what real TZ strings
+use. Southern-hemisphere rules that wrap the new year work correctly.
+
+Passing `TZ` explicitly overrides the rule, so a fixed offset always wins if
+that is what you want.
 
 ## Installing
 
@@ -125,8 +153,15 @@ cross-compiler. The repository is self-contained: it uses only the NDK's own
 headers.
 
 ```
-make
+make            build AmiTime
+make test       run the timezone tests on the build host
+make dist       build the release archives
 ```
+
+The daylight-saving logic lives in `tz.c`, deliberately free of Amiga headers
+so it can be compiled and tested natively — `make test` checks it against both
+changeover boundaries, "last Sunday" rules, southern-hemisphere zones that wrap
+the new year, and zones without DST.
 
 ## Notes for the curious
 

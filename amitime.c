@@ -37,6 +37,8 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
+#include "tz.h"
+
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
@@ -45,7 +47,7 @@
  * be REFERENCED by real code or the linker discards it (a bare
  * __attribute__((used)) const array was not enough here), so the VERSION
  * switch below prints it - which makes it useful rather than just present. */
-#define AMITIME_VERSION "AmiTime 1.0 (25.7.2026)"
+#define AMITIME_VERSION "AmiTime 1.1 (25.7.2026)"
 static const char verstag[] = "$VER: " AMITIME_VERSION;
 
 /* Library bases that the proto-header inlines expect us to provide. */
@@ -279,12 +281,14 @@ int main(void)
 {
     struct RDArgs *rdargs;
     LONG   rda[8];
-    UBYTE  hostbuf[128], envbuf[64];
+    UBYTE  hostbuf[128], envbuf[64], tzbuf[80];
     STRPTR host     = (STRPTR)SNTP_DEFAULT_HOST;
     LONG   port     = SNTP_DEFAULT_PORT;
     LONG   timeout  = 5;
     LONG   tz_mins  = 0;
     BOOL   tz_set   = FALSE;
+    struct TzRule tzrule;
+    BOOL   have_rule = FALSE;
     BOOL   showonly = FALSE, savertc = FALSE, showver = FALSE;
     ULONG  ntp_secs = 0, ntp_frac = 0, amiga_secs;
     LONG   i;
@@ -297,6 +301,12 @@ int main(void)
         tz_mins = parse_int((CONST_STRPTR)envbuf) * 60;
         tz_set  = TRUE;
     }
+    /* A POSIX TZ rule (ENV:TZ, or ENV:AMITIME_TZRULE) is the only way to get
+     * daylight saving right by itself - AmigaOS Locale carries an offset but
+     * no DST rules at all. */
+    if (get_env_str((CONST_STRPTR)"AMITIME_TZRULE", (STRPTR)tzbuf, sizeof(tzbuf)) ||
+        get_env_str((CONST_STRPTR)"TZ", (STRPTR)tzbuf, sizeof(tzbuf)))
+        have_rule = tz_parse((const char *)tzbuf, &tzrule) ? TRUE : FALSE;
 
     for (i = 0; i < 8; i++) rda[i] = 0;
     rdargs = ReadArgs((STRPTR)"HOST/K,TZ/K/N,PORT/K/N,TIMEOUT/K/N,SAVE/S,SHOW/S,QUIET/S,VERSION/S",
@@ -325,11 +335,17 @@ int main(void)
         return RETURN_OK;
     }
 
-    /* No explicit offset given?  Fall back to the machine's Locale
-     * preferences, and say so - a surprising number of systems never have
-     * Locale's GMT offset set, and silently using a wrong offset is far worse
-     * than telling the user where the number came from. */
-    if (!tz_set) {
+    /* Where the UTC offset comes from, in order of preference.  Whichever
+     * wins, say so: a surprising number of machines have never had Locale's
+     * GMT offset set, and a silently wrong clock is worse than a noisy one.
+     *   1. TZ argument            - fixed offset, no daylight saving
+     *   2. ENV:AMITIME_TZ         - ditto
+     *   3. a POSIX TZ rule        - the only source that knows about DST
+     *   4. Locale preferences     - fixed offset
+     *   5. nothing                - UTC */
+    if (tz_set) {
+        have_rule = FALSE;                     /* an explicit offset wins */
+    } else if (!have_rule) {
         LONG mins;
         if (locale_tz_minutes(&mins)) {
             tz_mins = mins;
@@ -350,6 +366,18 @@ int main(void)
         if (ntp_secs < NTP_TO_AMIGA_EPOCH) {
             say((CONST_STRPTR)"AmiTime: the server's time predates 1978 - ignoring\n");
         } else {
+            /* Apply the POSIX rule here rather than earlier: whether daylight
+             * saving is in force depends on the date we just fetched. */
+            if (have_rule) {
+                /* Amiga epoch (1978) -> Unix epoch (1970) for the rule. */
+                long unix_utc = (long)(ntp_secs - NTP_TO_AMIGA_EPOCH) + 252460800L;
+                int  off      = tz_offset_at(&tzrule, unix_utc);
+                tz_mins = off / 60;
+                say((CONST_STRPTR)"AmiTime: using TZ rule '%s' (%ld minutes from UTC%s)\n",
+                    (STRPTR)tzbuf, (LONG)tz_mins,
+                    (STRPTR)(tzrule.has_dst && off != tzrule.std_east
+                             ? ", daylight saving" : ""));
+            }
             amiga_secs = ntp_secs - NTP_TO_AMIGA_EPOCH + (ULONG)(tz_mins * 60);
             print_time((CONST_STRPTR)"AmiTime:", amiga_secs);
 

@@ -107,6 +107,17 @@ Run >NIL: C:AmiTime QUIET TIMEOUT 20
 - A TCP/IP stack providing `bsdsocket.library`
 - A reachable SNTP/NTP server — the internet, or one on your LAN
 
+## Tested on
+
+| Machine | Chipset / CPU | Stack + hardware |
+|---|---|---|
+| A4000 | AGA, 68060 | Roadshow over MNT ZZ9000 ethernet |
+| A2000 | **ECS**, 68030 (no FPU) | Roadshow over Individual Computers X-Surf |
+| A1200 | AGA, 68030 | [a314bsd](https://github.com/lainejones/a314bsd) — sockets on a Raspberry Pi over A314 |
+
+All on AmigaOS 3.2.3, against both a LAN time server and `pool.ntp.org`. The
+A4000 and A2000 also had their battery clocks written with `SAVE`.
+
 ## Building
 
 Built with the [bebbo amiga-gcc](https://github.com/bebbo/amiga-gcc)

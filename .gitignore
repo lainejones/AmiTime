@@ -3,3 +3,4 @@ amitime
 *.lha
 *.zip
 dist/
+relnotes*.md

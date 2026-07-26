@@ -111,9 +111,15 @@ To do it by hand instead:
 
 ```
 Copy AmiTime C:
+Protect C:AmiTime +e
 SetEnv SAVE AMITIME_HOST pool.ntp.org
 SetEnv SAVE AMITIME_TZ -6
 ```
+
+The `Protect` matters if you unpacked the **.zip**: ZIP archives cannot carry
+AmigaDOS protection bits, so `AmiTime` arrives without its `e` (executable)
+flag and the Shell will refuse to run it. The `.lha` preserves the flag, and
+the installer sets it either way.
 
 and add to `S:User-Startup`, *after* your TCP/IP stack starts:
 

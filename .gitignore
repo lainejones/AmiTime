@@ -1,3 +1,5 @@
 amitime
 *.o
 *.lha
+*.zip
+dist/

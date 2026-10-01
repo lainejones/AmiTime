@@ -71,6 +71,9 @@ GMT offset and nothing more (`loc_Flags` is documented "always 0 for now"). So
 for the clock to stay right across a changeover, the rules have to come from a
 **POSIX TZ string**, the same format Unix uses:
 
+(`SetEnv SAVE` needs a newer OS such as 3.2; on 3.1 use `SetEnv` and then
+`Copy ENV:AMITIME_TZRULE ENVARC:`.)
+
 ```
 SetEnv SAVE AMITIME_TZRULE "MST7MDT,M3.2.0,M11.1.0"    ; US Mountain
 SetEnv SAVE AMITIME_TZRULE "CET-1CEST,M3.5.0,M10.5.0/3" ; Central Europe
@@ -97,24 +100,30 @@ that is what you want.
 
 ## Installing
 
-Run the supplied installer from a Shell in this drawer:
+Double-click the `Install` icon, or run it from a Shell in this drawer, where
+it also takes the server and the hours from UTC:
 
 ```
 Execute Install
+Execute Install 192.168.1.10 -6
 ```
 
-It copies `AmiTime` to `C:`, optionally asks for a server and timezone and
-stores them in `ENVARC:`, and can add a line to `S:User-Startup` so the clock
-is set at every boot.
+It copies `AmiTime` to `C:`, stores any server and timezone you gave it in
+`ENVARC:`, asks the server for the time once to prove it works, and prints the
+line to add to `S:User-Startup`.
 
 To do it by hand instead:
 
 ```
 Copy AmiTime C:
 Protect C:AmiTime +e
-SetEnv SAVE AMITIME_HOST pool.ntp.org
-SetEnv SAVE AMITIME_TZ -6
+SetEnv AMITIME_HOST pool.ntp.org
+SetEnv AMITIME_TZ -6
+Copy ENV:AMITIME_#? ENVARC:
 ```
+
+(Newer AmigaOS versions such as 3.2 do both in one step with `SetEnv SAVE`.
+OS 3.1's SetEnv has no SAVE switch, so copy the variables to `ENVARC:` yourself.)
 
 The `Protect` matters if you unpacked the **.zip**: ZIP archives cannot carry
 AmigaDOS protection bits, so `AmiTime` arrives without its `e` (executable)

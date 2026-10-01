@@ -35,14 +35,18 @@ ECHO "  done."
 
 ; --- configuration (stored in ENVARC: so it survives a reboot) -------------
 IF NOT "{host}" EQ ""
-  SETENV SAVE AMITIME_HOST "{host}"
+  ; plain SetEnv + a copy to ENVARC: - 3.1's SetEnv has no SAVE switch:
+  ; it takes SAVE as the variable's name and saves nothing
+  SETENV AMITIME_HOST "{host}"
+  COPY >NIL: ENV:AMITIME_HOST ENVARC:
   ECHO "  time server set to {host}"
 ELSE
   ECHO "  no server given - AmiTime will use pool.ntp.org"
 ENDIF
 
 IF NOT "{tz}" EQ ""
-  SETENV SAVE AMITIME_TZ "{tz}"
+  SETENV AMITIME_TZ "{tz}"
+  COPY >NIL: ENV:AMITIME_TZ ENVARC:
   ECHO "  timezone set to {tz} hours from UTC"
 ELSE
   ECHO "  no timezone given - AmiTime will use your Locale preferences"

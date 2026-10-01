@@ -9,7 +9,7 @@
 #   make dist     build the release archives (.lha and .zip)
 #   make clean    remove build products
 
-VERSION = 1.1
+VERSION = 1.1.1
 CC      = m68k-amigaos-gcc
 CFLAGS  = -m68000 -O2 -noixemul -Wall -fomit-frame-pointer
 
@@ -34,19 +34,21 @@ dist: amitime
 	rm -rf $(DISTDIR) $(DISTFILE).lha $(DISTFILE).zip
 	mkdir -p $(DISTDIR)/AmiTime
 	cp amitime $(DISTDIR)/AmiTime/AmiTime
-	cp Install README.md LICENSE $(DISTDIR)/AmiTime/
-	cd $(DISTDIR) && zip -qr ../$(DISTFILE).zip AmiTime
+	cp Install Install.info README.md LICENSE $(DISTDIR)/AmiTime/
+	@# the drawer's own icon goes BESIDE it, or the unpacked drawer is invisible on Workbench
+	cp drawer.info $(DISTDIR)/AmiTime.info
+	cd $(DISTDIR) && zip -qr ../$(DISTFILE).zip AmiTime AmiTime.info
 	@# .lha only if the host has an LHA that can CREATE archives.  Note that
 	@# the common Linux "lha" (lhasa) is decompress-only, so this is usually
 	@# skipped and the release .lha is made on an Amiga with the real LhA:
-	@#     LhA a AmiTime-1.0.lha AmiTime
+	@#     LhA -r a AmiTime-1.0.lha AmiTime AmiTime.info
 	@if lha 2>&1 | grep -q ' a ' ; then \
-		cd $(DISTDIR) && lha -aq2 ../$(DISTFILE).lha AmiTime && \
+		cd $(DISTDIR) && lha -aq2 ../$(DISTFILE).lha AmiTime AmiTime.info && \
 		echo "built $(DISTFILE).lha and $(DISTFILE).zip" ; \
 	else \
 		echo "built $(DISTFILE).zip" ; \
 		echo "NOTE: no archive-creating lha here (lhasa only extracts)." ; \
-		echo "      Build the .lha on an Amiga:  LhA a $(DISTFILE).lha AmiTime" ; \
+		echo "      Build the .lha on an Amiga:  LhA -r a $(DISTFILE).lha AmiTime AmiTime.info" ; \
 	fi
 	rm -rf $(DISTDIR)
 

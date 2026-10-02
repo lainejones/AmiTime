@@ -41,7 +41,7 @@ dist: amitime
 	@# .lha only if the host has an LHA that can CREATE archives.  Note that
 	@# the common Linux "lha" (lhasa) is decompress-only, so this is usually
 	@# skipped and the release .lha is made on an Amiga with the real LhA:
-	@#     LhA -r a AmiTime-1.0.lha AmiTime AmiTime.info
+	@#     LhA -r a AmiTime-$(VERSION).lha AmiTime AmiTime.info
 	@if lha 2>&1 | grep -q ' a ' ; then \
 		cd $(DISTDIR) && lha -aq2 ../$(DISTFILE).lha AmiTime AmiTime.info && \
 		echo "built $(DISTFILE).lha and $(DISTFILE).zip" ; \

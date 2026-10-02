@@ -122,19 +122,19 @@ SetEnv AMITIME_TZ -6
 Copy ENV:AMITIME_#? ENVARC:
 ```
 
-(Newer AmigaOS versions such as 3.2 do both in one step with `SetEnv SAVE`.
-OS 3.1's SetEnv has no SAVE switch, so copy the variables to `ENVARC:` yourself.)
-
-The `Protect` matters if you unpacked the **.zip**: ZIP archives cannot carry
-AmigaDOS protection bits, so `AmiTime` arrives without its `e` (executable)
-flag and the Shell will refuse to run it. The `.lha` preserves the flag, and
-the installer sets it either way.
-
 and add to `S:User-Startup`, *after* your TCP/IP stack starts:
 
 ```
 C:AmiTime QUIET
 ```
+
+(Newer AmigaOS versions such as 3.2 do both in one step with `SetEnv SAVE`.
+OS 3.1's SetEnv has no SAVE switch, so copy the variables to `ENVARC:` yourself.)
+
+The `Protect` matters if you unpacked the **.zip**: ZIP archives cannot carry
+AmigaDOS protection bits, so `AmiTime` arrives without its `e` (executable)
+flag and the Shell will refuse to run it. Use the `.lha`, which preserves the
+flag, or `Protect C:AmiTime +e` after a `.zip`; the installer sets it either way.
 
 On a machine with a working battery clock, `C:AmiTime SAVE QUIET` will also
 keep the RTC corrected. If your stack takes a while to come up (a314bsd waits
@@ -143,6 +143,13 @@ on a Raspberry Pi, for example), background it and allow more time:
 ```
 Run >NIL: C:AmiTime QUIET TIMEOUT 20
 ```
+
+### Version note
+
+The program inside the 1.1.1 package still reports itself as `AmiTime 1.1`
+(`AmiTime VERSION`, `Version C:AmiTime`). That is expected: 1.1.1 changed only
+the installer and the icons, not the program. Builds from this source report
+1.1.1.
 
 ## Requirements
 

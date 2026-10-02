@@ -47,7 +47,7 @@
  * be REFERENCED by real code or the linker discards it (a bare
  * __attribute__((used)) const array was not enough here), so the VERSION
  * switch below prints it - which makes it useful rather than just present. */
-#define AMITIME_VERSION "AmiTime 1.1 (25.7.2026)"
+#define AMITIME_VERSION "AmiTime 1.1.1 (30.9.2026)"
 static const char verstag[] = "$VER: " AMITIME_VERSION;
 
 /* Library bases that the proto-header inlines expect us to provide. */

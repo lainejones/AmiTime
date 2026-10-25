@@ -9,7 +9,7 @@
 #   make dist     build the release archives (.lha and .zip)
 #   make clean    remove build products
 
-VERSION = 1.1.1
+VERSION = 1.1.2
 CC      = m68k-amigaos-gcc
 CFLAGS  = -m68000 -O2 -noixemul -Wall -fomit-frame-pointer
 

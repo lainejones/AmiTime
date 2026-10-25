@@ -42,6 +42,12 @@ AmiTime [HOST <server>] [TZ <hours>] [PORT <n>] [TIMEOUT <secs>]
 | `QUIET`   | Say nothing (for `User-Startup`). |
 | `VERSION` | Print the version and exit. |
 
+Return code: 0 when the clock was set (or shown), 5 (WARN) when it wasn't -
+no stack, server not reachable, no reply. A warning, deliberately: from
+`S:User-Startup` anything at or above the shell's `FailAt` (10) stops the
+whole script, and a time server that happens to be down at boot must not take
+the lines after AmiTime with it (it did, before 1.1.2).
+
 Examples:
 
 ```

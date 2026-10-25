@@ -47,7 +47,7 @@
  * be REFERENCED by real code or the linker discards it (a bare
  * __attribute__((used)) const array was not enough here), so the VERSION
  * switch below prints it - which makes it useful rather than just present. */
-#define AMITIME_VERSION "AmiTime 1.1.1 (30.9.2026)"
+#define AMITIME_VERSION "AmiTime 1.1.2 (25.10.2026)"
 static const char verstag[] = "$VER: " AMITIME_VERSION;
 
 /* Library bases that the proto-header inlines expect us to provide. */
@@ -292,7 +292,10 @@ int main(void)
     BOOL   showonly = FALSE, savertc = FALSE, showver = FALSE;
     ULONG  ntp_secs = 0, ntp_frac = 0, amiga_secs;
     LONG   i;
-    int    rc = RETURN_FAIL;
+    /* A clock left unset is a warning (5), never an error: from S:User-Startup
+     * anything at or above FailAt (10) stops the whole script, so a time server
+     * that is down at boot took every line after AmiTime with it (1.1.2). */
+    int    rc = RETURN_WARN;
 
     /* Defaults from ENV: so User-Startup can be a bare "AmiTime". */
     if (get_env_str((CONST_STRPTR)"AMITIME_HOST", (STRPTR)hostbuf, sizeof(hostbuf)))
@@ -359,7 +362,7 @@ int main(void)
     SocketBase = OpenLibrary((STRPTR)"bsdsocket.library", 4);
     if (!SocketBase) {
         say((CONST_STRPTR)"AmiTime: no bsdsocket.library - is the TCP/IP stack running?\n");
-        return RETURN_FAIL;
+        return RETURN_WARN;
     }
 
     if (sntp_query(host, (UWORD)port, timeout, &ntp_secs, &ntp_frac)) {
